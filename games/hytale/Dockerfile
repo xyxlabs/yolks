@@ -27,44 +27,26 @@ LABEL       author="William V." maintainer="william.venner@infraly.co"
 LABEL       org.opencontainers.image.source="https://github.com/pterodactyl/yolks"
 LABEL       org.opencontainers.image.licenses=MIT
 
+USER        root
+
 RUN         apt update -y \
             && apt install -y \
-                curl \
-                ca-certificates \
-                fontconfig \
-                tzdata \
                 tini \
                 unzip \
-                jq \
-                gettext-base \
-                dbus \
-                tar \
                 zip \
-                sqlite3 \
-                git \
-                openssl \
-                lsof \
+                dbus \
                 file \
+                python3-minimal \
+                python3-requests \
             && apt clean \
-				&& rm -rf /var/lib/apt/lists/*
+            && rm -rf /var/lib/apt/lists/*
 
-
-## configure locale
-RUN         sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
-            locale-gen
-ENV         LANG en_US.UTF-8
-ENV         LANGUAGE en_US:en
-ENV         LC_ALL en_US.UTF-8
-
-## Setup user and working directory
-RUN         useradd -m -d /home/container -s /bin/bash container
 USER        container
 ENV         USER=container HOME=/home/container
 WORKDIR     /home/container
 
-STOPSIGNAL SIGINT
+COPY        --chown=container:container ./entrypoint.py /entrypoint.py
+RUN         chmod +x /entrypoint.py
 
-COPY        --chown=container:container ./entrypoint.sh /entrypoint.sh
-RUN         chmod +x /entrypoint.sh
-ENTRYPOINT    ["/usr/bin/tini", "-g", "--"]
-CMD         ["/entrypoint.sh"]
+ENTRYPOINT  ["/usr/bin/tini", "-g", "--"]
+CMD         ["/entrypoint.py"]
